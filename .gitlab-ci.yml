@@ -1,0 +1,156 @@
+image: golang:1.14
+stages:
+  - init
+  - test & build
+  - release
+  - package
+  - publish
+
+variables:
+  DOCKER_IMAGE_URL: zephinzer/template-go-package
+
+.default_script:
+  entrypoint: [entrypoint]
+.go_linux:
+  variables:
+    GOOS: linux
+    GOARCH: amd64
+.go_macos:
+  variables:
+    GOOS: darwin
+    GOARCH: amd64
+.go_windows:
+  variables:
+    GOOS: windows
+    GOARCH: "386"
+
+init:
+  stage: init
+  # https://gitlab.com/usvc/images/ci/recipes#go-dependencies
+  image: usvc/ci:go-dependencies
+  extends: [.default_script]
+  cache:
+    key: ${CI_COMMIT_REF_NAME}
+    paths: ["./vendor"]
+  artifacts:
+    paths: ["./vendor"]
+
+unit test:
+  stage: test & build
+  # https://gitlab.com/usvc/images/ci/recipes#go-test
+  image: usvc/ci:go-test
+  extends: [.default_script]
+  dependencies: ["init"]
+  artifacts:
+    paths: ["./c.out"]
+
+.build:
+  stage: test & build
+  # https://gitlab.com/usvc/images/ci/recipes#go-build-production
+  image: usvc/ci:go-build-production
+  extends: [.default_script]
+  dependencies: ["init"]
+  artifacts:
+    paths: ["./bin/*"]
+  variables:
+    BIN_NAME: dev
+  before_script:
+    - make setup_build
+    - git fetch
+build linux (test):
+  extends: .build .go_linux
+  only: [master]
+build linux:
+  extends: .build .go_linux
+  only: ["tags"]
+build macos (test):
+  extends: .build .go_macos
+  only: [master]
+build macos:
+  extends: .build .go_macos
+  only: ["tags"]
+build windows (test):
+  extends: .build .go_windows
+  only: [master]
+build windows:
+  extends: .build .go_windows
+  only: ["tags"]
+
+coverage report:
+  stage: release
+  # https://gitlab.com/usvc/images/ci/recipes#go-coverage-code-climate
+  image: usvc/ci:go-coverage-code-climate
+  extends: [.default_script]
+  dependencies: [unit test]
+  only:
+    variables:
+    - $CC_TEST_REPORTER_ID
+  allow_failure: true
+
+version bump:
+  stage: release
+  # https://gitlab.com/usvc/images/ci/recipes#version-bump-gitlab
+  image: usvc/ci:version-bump-gitlab
+  extends: [.default_script]
+  only:
+    refs:
+    - master
+    variables:
+    - $DEPLOY_KEY
+
+.compress:
+  stage: package
+  # https://gitlab.com/usvc/images/ci/recipes#compress
+  image: usvc/ci:compress
+  extends: [.default_script]
+  only: ["tags"]
+  allow_failure: true
+  artifacts:
+    paths: ["./bin/*"]
+compress linux:
+  extends: .compress .go_linux
+  dependencies: [build linux]
+compress macos:
+  extends: .compress .go_macos
+  dependencies: [build macos]
+compress windows:
+  extends: .compress .go_windows
+  dependencies: [build windows]
+
+dockerize:
+  stage: package
+  # https://gitlab.com/usvc/images/ci/recipes#docker-build
+  image: usvc/ci:docker-build
+  extends: [.default_script]
+  only:
+    refs:
+    - tags
+    changes:
+    - "**/Dockerfile*"
+    - "*/Dockerfile*"
+    - "**/*.go"
+    - "*.go"
+  services: ["docker:19.03.1-dind"]
+  artifacts:
+    paths: ["./build/*"]
+  allow_failure: true
+
+dockerhub:
+  stage: publish
+  # https://gitlab.com/usvc/images/ci/recipes#docker-publish
+  image: usvc/ci:docker-publish
+  extends: [.default_script]
+  only:
+    refs:
+    - tags
+    variables:
+    - $DOCKER_REGISTRY_USERNAME
+    - $DOCKER_REGISTRY_PASSWORD
+    changes:
+    - "**/Dockerfile*"
+    - "*/Dockerfile*"
+    - "**/*.go"
+    - "*.go"
+  services: ["docker:19.03.1-dind"]
+  dependencies: ["dockerize"]
+  allow_failure: true

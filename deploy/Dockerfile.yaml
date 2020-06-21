@@ -1,0 +1,29 @@
+schemaVersion: "2.0.0"
+commandTests:
+  - name: "example binary is in path"
+    command: "/entrypoint"
+    args: ["version"]
+fileExistenceTests:
+  - name: "example binary exists"
+    path: "/entrypoint"
+    shouldExist: true
+metadataTest:
+  labels:
+  - key: git_commit
+    value: "[a-f0-9]*"
+    isRegex: true
+  - key: git_repo_url
+    value: .*
+    isRegex: true
+  - key: git_tag
+    value: .*
+    isRegex: true
+  - key: go_package_url
+    value: .*
+    isRegex: true
+  - key: timestamp
+    value: "[0-9]*"
+    isRegex: true
+  - key: maintainer
+    value: .*
+    isRegex: true
