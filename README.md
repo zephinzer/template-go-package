@@ -42,7 +42,7 @@ This repository follows the "Standard Go Project Layout" as laid out at [https:/
 | `image` | Build the Docker image for the application |
 | `image_test` | Runs `container-structure-test` tests on the built image |
 | `image_export` | Saves the Docker image as a tarball at `./build/image.tar.gz` |
-| `image_export` | Loads the Docker image from a tarball at `./build/image.tar.gz` |
+| `image_import` | Loads the Docker image from a tarball at `./build/image.tar.gz` |
 | `.keys/versioning` | Creates a set of keys usable for version bumping |
 
 ## Process

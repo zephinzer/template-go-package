@@ -1,6 +1,7 @@
 CMD_NAME=example
 GO_PACKAGE_URL=$(shell cat go.mod | head -n 1 | cut -f 2 -d ' ')
 DOCKER_IMAGE_PATH=zephinzer/template-go-package
+DOCKER_TARBALL_PATH=./build/image.tar.gz
 GIT_REPO_URL=$(shell git remote -v | grep push | tr -s '\t' ' ' | cut -d ' ' -f 2)
 GIT_COMMIT=$(shell git rev-parse --verify HEAD)
 GIT_TAG=$(shell git describe --tag $(shell git rev-list --tags --max-count=1))
@@ -101,9 +102,9 @@ image_test: image
 		--image $(DOCKER_IMAGE_PATH):latest
 image_export:
 	mkdir -p ./build
-	docker save --output ./build/image.tar.gz $(DOCKER_IMAGE_PATH):latest
+	docker save --output $(DOCKER_TARBALL_PATH) $(DOCKER_IMAGE_PATH):latest
 image_import:
-	docker load --input ./build/image.tar.gz
+	docker load --input $(DOCKER_TARBALL_PATH)
 .keys/versioning:
 	mkdir -p ./.keys/versioning
 	ssh-keygen -t rsa -b 8192 -f ./.keys/versioning/id_rsa -q -N ""
