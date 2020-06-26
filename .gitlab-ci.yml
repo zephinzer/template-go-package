@@ -58,22 +58,22 @@ unit test:
     - make setup_build
     - git fetch
 build linux (test):
-  extends: .build .go_linux
+  extends: [.build, .go_linux]
   only: [master]
 build linux:
-  extends: .build .go_linux
+  extends: [.build, .go_linux]
   only: ["tags"]
 build macos (test):
-  extends: .build .go_macos
+  extends: [.build, .go_macos]
   only: [master]
 build macos:
-  extends: .build .go_macos
+  extends: [.build, .go_macos]
   only: ["tags"]
 build windows (test):
-  extends: .build .go_windows
+  extends: [.build, .go_windows]
   only: [master]
 build windows:
-  extends: .build .go_windows
+  extends: [.build, .go_windows]
   only: ["tags"]
 
 coverage report:
@@ -108,13 +108,13 @@ version bump:
   artifacts:
     paths: ["./bin/*"]
 compress linux:
-  extends: .compress .go_linux
+  extends: [.compress, .go_linux]
   dependencies: [build linux]
 compress macos:
-  extends: .compress .go_macos
+  extends: [.compress, .go_macos]
   dependencies: [build macos]
 compress windows:
-  extends: .compress .go_windows
+  extends: [.compress, .go_windows]
   dependencies: [build windows]
 
 dockerize:
